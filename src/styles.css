@@ -1,0 +1,556 @@
+/* ============================================
+   Vietnamese Street Resume - Styles
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  overflow: hidden;
+  background: #1a1a2e;
+  font-family: 'Inter', sans-serif;
+  cursor: default;
+  user-select: none;
+}
+
+/* ---- Loading Screen ---- */
+#loader {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #0f0f23;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+
+#loader.fade-out {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.loader-content {
+  text-align: center;
+  z-index: 1;
+}
+
+.loader-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 2.5rem;
+  color: #ff6b35;
+  text-shadow:
+    3px 3px 0 #c2185b,
+    0 0 20px rgba(255, 107, 53, 0.5);
+  margin-bottom: 1rem;
+  animation: flicker 3s infinite;
+}
+
+.loader-subtitle {
+  font-family: 'VT323', monospace;
+  font-size: 1.5rem;
+  color: #ffd700;
+  margin-bottom: 2rem;
+  animation: blink 1s infinite;
+}
+
+.loader-bar-container {
+  width: 300px;
+  height: 20px;
+  border: 2px solid #ff6b35;
+  margin: 0 auto 1.5rem;
+  padding: 2px;
+  image-rendering: pixelated;
+}
+
+.loader-bar {
+  height: 100%;
+  width: 0%;
+  background: repeating-linear-gradient(
+    90deg,
+    #ff6b35 0px,
+    #ff6b35 8px,
+    #c2185b 8px,
+    #c2185b 16px
+  );
+  transition: width 0.3s steps(20);
+}
+
+.loader-hint {
+  font-family: 'VT323', monospace;
+  font-size: 1.1rem;
+  color: #888;
+  animation: blink 2s infinite;
+}
+
+.loader-motorbike {
+  position: absolute;
+  bottom: 80px;
+  animation: driveAcross 4s linear infinite;
+}
+
+.motorbike-pixel {
+  width: 60px;
+  height: 30px;
+  position: relative;
+  image-rendering: pixelated;
+}
+
+.motorbike-pixel::before {
+  content: '';
+  position: absolute;
+  width: 40px;
+  height: 20px;
+  background: #e74c3c;
+  bottom: 10px;
+  left: 10px;
+  box-shadow:
+    -10px 0 0 #c0392b,
+    0 -8px 0 #e74c3c,
+    10px -8px 0 #c0392b,
+    -5px -16px 0 #f39c12;
+}
+
+.motorbike-pixel::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #333;
+  border-radius: 50%;
+  bottom: 0;
+  box-shadow: 30px 0 0 #333;
+}
+
+/* ---- Canvas ---- */
+#scene {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  image-rendering: pixelated;
+  cursor: pointer;
+}
+
+/* ---- UI Overlay ---- */
+#ui-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.street-name {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Press Start 2P', cursive;
+  font-size: 1rem;
+  color: #ffd700;
+  text-shadow: 2px 2px 0 #c2185b, 0 0 15px rgba(255, 215, 0, 0.4);
+  letter-spacing: 3px;
+  white-space: nowrap;
+}
+
+.hint-text {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'VT323', monospace;
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.6);
+  transition: opacity 0.5s;
+  white-space: nowrap;
+}
+
+.hint-text.hidden {
+  opacity: 0;
+}
+
+.nav-dots {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: all;
+}
+
+.nav-dot {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #ffd700;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  image-rendering: pixelated;
+}
+
+.nav-dot:hover,
+.nav-dot.active {
+  background: #ffd700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.nav-dot::after {
+  content: attr(data-label);
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'VT323', monospace;
+  font-size: 0.9rem;
+  color: #ffd700;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.nav-dot:hover::after {
+  opacity: 1;
+}
+
+.sound-toggle {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffd700;
+  color: #ffd700;
+  font-size: 1.2rem;
+  cursor: pointer;
+  pointer-events: all;
+  transition: all 0.3s;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.sound-toggle:hover {
+  background: rgba(255, 215, 0, 0.2);
+}
+
+.sound-toggle.muted .sound-icon {
+  opacity: 0.3;
+}
+
+/* ---- Tooltip ---- */
+#tooltip {
+  position: fixed;
+  z-index: 50;
+  font-family: 'VT323', monospace;
+  font-size: 1.1rem;
+  color: #ffd700;
+  background: rgba(15, 15, 35, 0.9);
+  border: 1px solid #ffd700;
+  padding: 6px 12px;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+#tooltip.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* ---- Panel Overlay ---- */
+#panel-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 30, 0.85);
+  backdrop-filter: blur(4px);
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+#panel-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.panel {
+  position: relative;
+  width: min(700px, 90vw);
+  max-height: 85vh;
+  background: #13132b;
+  border: 2px solid #ff6b35;
+  box-shadow:
+    0 0 30px rgba(255, 107, 53, 0.3),
+    inset 0 0 60px rgba(15, 15, 35, 0.8);
+  overflow-y: auto;
+  animation: panelSlideIn 0.4s ease;
+}
+
+.panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel::-webkit-scrollbar-track {
+  background: #1a1a2e;
+}
+
+.panel::-webkit-scrollbar-thumb {
+  background: #ff6b35;
+}
+
+.panel-close {
+  position: sticky;
+  top: 0;
+  float: right;
+  z-index: 10;
+  background: #ff6b35;
+  border: none;
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  font-family: 'Press Start 2P', cursive;
+  transition: background 0.2s;
+}
+
+.panel-close:hover {
+  background: #c2185b;
+}
+
+.panel-header {
+  padding: 2rem 2rem 1rem;
+  border-bottom: 1px solid rgba(255, 107, 53, 0.3);
+}
+
+.panel-header h2 {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 1rem;
+  color: #ff6b35;
+  text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.panel-header .panel-subtitle {
+  font-family: 'VT323', monospace;
+  font-size: 1.2rem;
+  color: #ffd700;
+}
+
+.panel-content {
+  padding: 1.5rem 2rem 2rem;
+  font-family: 'Inter', sans-serif;
+  color: #d4d4e0;
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+
+.panel-content h3 {
+  font-family: 'VT323', monospace;
+  font-size: 1.5rem;
+  color: #ff6b35;
+  margin: 1.5rem 0 0.8rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px dashed rgba(255, 107, 53, 0.3);
+}
+
+.panel-content h3:first-child {
+  margin-top: 0;
+}
+
+.panel-content p {
+  margin-bottom: 0.8rem;
+}
+
+.panel-content ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 1rem;
+}
+
+.panel-content ul li {
+  position: relative;
+  padding-left: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.panel-content ul li::before {
+  content: '►';
+  position: absolute;
+  left: 0;
+  color: #ff6b35;
+  font-size: 0.7rem;
+  top: 4px;
+}
+
+.panel-content .tag {
+  display: inline-block;
+  background: rgba(255, 107, 53, 0.15);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  color: #ff6b35;
+  padding: 4px 10px;
+  margin: 3px 4px 3px 0;
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+}
+
+.panel-content .job {
+  margin-bottom: 1.8rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 3px solid #ff6b35;
+}
+
+.panel-content .job-title {
+  font-weight: 600;
+  color: #ffd700;
+  font-size: 1.05rem;
+}
+
+.panel-content .job-company {
+  color: #ff6b35;
+  font-weight: 500;
+}
+
+.panel-content .job-period {
+  font-family: 'VT323', monospace;
+  font-size: 1.1rem;
+  color: #888;
+  margin: 0.2rem 0 0.6rem;
+}
+
+.panel-content .edu-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 3px solid #ffd700;
+}
+
+.panel-content .edu-year {
+  font-family: 'VT323', monospace;
+  font-size: 1.2rem;
+  color: #ffd700;
+  min-width: 50px;
+}
+
+.panel-content .contact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+  padding: 0.6rem 0;
+}
+
+.panel-content .contact-icon {
+  font-size: 1.3rem;
+  width: 30px;
+  text-align: center;
+}
+
+.panel-content .contact-item a {
+  color: #ff6b35;
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(255, 107, 53, 0.4);
+  transition: color 0.2s;
+}
+
+.panel-content .contact-item a:hover {
+  color: #ffd700;
+}
+
+.panel-content .cert-item {
+  padding: 0.5rem 0;
+  padding-left: 1.2rem;
+  position: relative;
+  margin-bottom: 0.3rem;
+}
+
+.panel-content .cert-item::before {
+  content: '★';
+  position: absolute;
+  left: 0;
+  color: #ffd700;
+}
+
+/* ---- Animations ---- */
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.7; }
+  94% { opacity: 1; }
+  96% { opacity: 0.8; }
+  97% { opacity: 1; }
+}
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@keyframes driveAcross {
+  0% { transform: translateX(-100vw); }
+  100% { transform: translateX(100vw); }
+}
+
+@keyframes panelSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+  .loader-title {
+    font-size: 1.5rem;
+  }
+
+  .street-name {
+    font-size: 0.7rem;
+    top: 12px;
+  }
+
+  .panel {
+    width: 95vw;
+    max-height: 90vh;
+  }
+
+  .panel-header {
+    padding: 1.5rem 1.2rem 0.8rem;
+  }
+
+  .panel-header h2 {
+    font-size: 0.8rem;
+  }
+
+  .panel-content {
+    padding: 1rem 1.2rem 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  .nav-dots {
+    right: 10px;
+  }
+
+  .hint-text {
+    font-size: 1rem;
+    bottom: 20px;
+  }
+}
