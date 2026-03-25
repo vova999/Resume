@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tu Nguyen - Interactive Resume | Vietnamese Street</title>
+  <meta name="description" content="Interactive pixel art resume of Tu Nguyen - Fintech Tech Lead based in Hanoi, Vietnam" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loader">
+    <div class="loader-content">
+      <div class="loader-title">Hà Nội 1995</div>
+      <div class="loader-subtitle">Đang tải...</div>
+      <div class="loader-bar-container">
+        <div class="loader-bar" id="loader-bar"></div>
+      </div>
+      <div class="loader-hint">Click anywhere to explore the street</div>
+    </div>
+    <div class="loader-motorbike">
+      <div class="motorbike-pixel"></div>
+    </div>
+  </div>
+
+  <!-- Main Canvas Scene -->
+  <canvas id="scene"></canvas>
+
+  <!-- UI Overlay -->
+  <div id="ui-overlay">
+    <div class="street-name">PHỐ TU NGUYỄN</div>
+    <div class="hint-text" id="hint-text">Hover over the buildings to explore</div>
+    <div class="nav-dots" id="nav-dots"></div>
+    <div class="sound-toggle" id="sound-toggle" title="Toggle ambient sounds">
+      <span class="sound-icon">♪</span>
+    </div>
+  </div>
+
+  <!-- Resume Panel Overlay -->
+  <div id="panel-overlay" class="hidden">
+    <div id="panel" class="panel">
+      <button class="panel-close" id="panel-close">✕</button>
+      <div class="panel-header" id="panel-header"></div>
+      <div class="panel-content" id="panel-content"></div>
+    </div>
+  </div>
+
+  <!-- Tooltip -->
+  <div id="tooltip" class="hidden"></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
