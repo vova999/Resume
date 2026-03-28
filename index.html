@@ -14,28 +14,25 @@
   <!-- Loading Screen -->
   <div id="loader">
     <div class="loader-content">
-      <div class="loader-title">Hà Nội 1995</div>
+      <div class="loader-title">Hà Nội Street</div>
       <div class="loader-subtitle">Đang tải...</div>
       <div class="loader-bar-container">
         <div class="loader-bar" id="loader-bar"></div>
       </div>
-      <div class="loader-hint">Click anywhere to explore the street</div>
-    </div>
-    <div class="loader-motorbike">
-      <div class="motorbike-pixel"></div>
+      <div class="loader-hint">Use arrow keys to explore</div>
     </div>
   </div>
 
-  <!-- Main Canvas Scene -->
+  <!-- Background frames loaded via JS -->
+
+  <!-- Game Canvas (video + character + NPCs all drawn here) -->
   <canvas id="scene"></canvas>
 
-  <!-- UI Overlay -->
+  <!-- Controls hint -->
   <div id="ui-overlay">
     <div class="street-name">PHỐ TU NGUYỄN</div>
-    <div class="hint-text" id="hint-text">Hover over the buildings to explore</div>
-    <div class="nav-dots" id="nav-dots"></div>
-    <div class="sound-toggle" id="sound-toggle" title="Toggle ambient sounds">
-      <span class="sound-icon">♪</span>
+    <div class="controls-hint" id="controls-hint">
+      <span>Arrow keys to move</span> · <span>E to interact</span>
     </div>
   </div>
 
@@ -48,8 +45,8 @@
     </div>
   </div>
 
-  <!-- Tooltip -->
-  <div id="tooltip" class="hidden"></div>
+  <!-- Interaction prompt -->
+  <div id="interact-prompt" class="hidden">Press E to talk</div>
 
   <script type="module" src="/src/main.js"></script>
 </body>

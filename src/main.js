@@ -1,9 +1,12 @@
 // ============================================
-// Vietnamese Street Resume - Main Entry
+// RPG Resume — Main Entry
+// World coordinate system: 640x360
 // ============================================
 
-import { renderScene, hotspots } from './scene.js';
+import { loadAssets } from './assets.js';
+import { renderScene, getNearbyInteraction, getViewport, worldToScreen, screenToWorld, WORLD_W, WORLD_H } from './scene.js';
 import { resumeData, sectionOrder } from './resumeData.js';
+import { toggleEditor, isEditorActive, editorDraw, editorMouseDown, editorMouseMove, editorMouseUp, editorWheel, editorCopyValues, editorKeyDown } from './editor.js';
 
 // ---- DOM Elements ----
 const canvas = document.getElementById('scene');
@@ -14,73 +17,163 @@ const panelOverlay = document.getElementById('panel-overlay');
 const panelHeader = document.getElementById('panel-header');
 const panelContent = document.getElementById('panel-content');
 const panelClose = document.getElementById('panel-close');
-const tooltip = document.getElementById('tooltip');
-const hintText = document.getElementById('hint-text');
-const navDotsContainer = document.getElementById('nav-dots');
-const soundToggle = document.getElementById('sound-toggle');
+const interactPrompt = document.getElementById('interact-prompt');
 
-// ---- State ----
-let animFrame = null;
-let currentHover = null;
+// ---- Player State (WORLD coordinates) ----
+const player = {
+  x: WORLD_W * 0.5,
+  y: WORLD_H * 0.73,
+  speed: 1.2, // world pixels per frame
+  facing: 'down',
+  moving: false,
+};
+
+// Walkable zones — array of polygons (each polygon = array of {x,y} vertices, perpendicular edges)
+const WALK_ZONES = [
+  [
+    { x: 8, y: 247 },
+    { x: 27, y: 247 },
+    { x: 27, y: 268 },
+    { x: 105, y: 268 },
+    { x: 105, y: 244 },
+    { x: 130, y: 244 },
+    { x: 130, y: 266 },
+    { x: 201, y: 266 },
+    { x: 201, y: 253 },
+    { x: 283, y: 253 },
+    { x: 283, y: 227 },
+    { x: 288, y: 227 },
+    { x: 288, y: 261 },
+    { x: 402, y: 261 },
+    { x: 402, y: 238 },
+    { x: 407, y: 238 },
+    { x: 407, y: 265 },
+    { x: 556, y: 265 },
+    { x: 556, y: 243 },
+    { x: 622, y: 243 },
+    { x: 622, y: 251 },
+    { x: 634, y: 251 },
+    { x: 634, y: 325 },
+    { x: 369, y: 325 },
+    { x: 369, y: 296 },
+    { x: 214, y: 296 },
+    { x: 214, y: 322 },
+    { x: 199, y: 322 },
+    { x: 199, y: 299 },
+    { x: 65, y: 299 },
+    { x: 65, y: 323 },
+    { x: 2, y: 323 },
+    { x: 8, y: 323 },
+  ],
+];
+
+// Point-in-polygon (ray casting)
+function pointInPoly(px, py, verts) {
+  let inside = false;
+  for (let i = 0, j = verts.length - 1; i < verts.length; j = i++) {
+    const yi = verts[i].y, yj = verts[j].y;
+    if ((yi > py) !== (yj > py) &&
+        px < (verts[j].x - verts[i].x) * (py - yi) / (yj - yi) + verts[i].x) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+// Nearest point on a line segment
+function nearestOnSeg(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay;
+  const len2 = dx * dx + dy * dy;
+  if (len2 === 0) return { x: ax, y: ay };
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2));
+  return { x: ax + t * dx, y: ay + t * dy };
+}
+
+// Clamp a point to the nearest walkable zone
+function clampToZones(x, y) {
+  for (const poly of WALK_ZONES) {
+    if (pointInPoly(x, y, poly)) return { x, y };
+  }
+  let bestDist = Infinity, bx = x, by = y;
+  for (const poly of WALK_ZONES) {
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], b = poly[(i + 1) % poly.length];
+      const p = nearestOnSeg(x, y, a.x, a.y, b.x, b.y);
+      const d = (p.x - x) ** 2 + (p.y - y) ** 2;
+      if (d < bestDist) { bestDist = d; bx = p.x; by = p.y; }
+    }
+  }
+  return { x: bx, y: by };
+}
+
+// ---- Input State ----
+const keys = {};
 let isPanelOpen = false;
 let activeSection = null;
-let soundEnabled = false;
-let audioCtx = null;
+let animFrame = null;
 
 // ---- Canvas Sizing ----
 function resizeCanvas() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  canvas.width = window.innerWidth * dpr;
-  canvas.height = window.innerHeight * dpr;
-  canvas.style.width = window.innerWidth + 'px';
-  canvas.style.height = window.innerHeight + 'px';
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 }
 
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-// ---- Navigation Dots ----
-function createNavDots() {
-  navDotsContainer.innerHTML = '';
-  sectionOrder.forEach(key => {
-    const dot = document.createElement('div');
-    dot.className = 'nav-dot';
-    dot.dataset.section = key;
-    dot.dataset.label = resumeData[key].label;
-    dot.addEventListener('click', () => openPanel(key));
-    navDotsContainer.appendChild(dot);
-  });
-}
-createNavDots();
+// ---- Keyboard Input ----
+window.addEventListener('keydown', (e) => {
+  keys[e.key] = true;
 
-function updateNavDots(sectionId) {
-  document.querySelectorAll('.nav-dot').forEach(dot => {
-    dot.classList.toggle('active', dot.dataset.section === sectionId);
-  });
-}
+  // Editor toggle
+  if (e.key === '`') { toggleEditor(); return; }
+  if (isEditorActive() && (e.key === 'c' || e.key === 'C')) { editorCopyValues(WALK_ZONES); return; }
+  if (isEditorActive()) { editorKeyDown(e, WALK_ZONES); }
+
+  if ((e.key === 'e' || e.key === 'E' || e.key === 'Enter') && !isPanelOpen) {
+    const nearby = getNearbyInteraction(player);
+    if (nearby) openPanel(nearby.id);
+  }
+
+  if (e.key === 'Escape' && isPanelOpen) closePanel();
+
+  if (!isPanelOpen) {
+    const num = parseInt(e.key);
+    if (num >= 1 && num <= sectionOrder.length) openPanel(sectionOrder[num - 1]);
+  }
+
+  if (isPanelOpen) {
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      const idx = sectionOrder.indexOf(activeSection);
+      openPanel(sectionOrder[(idx + 1) % sectionOrder.length]);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const idx = sectionOrder.indexOf(activeSection);
+      openPanel(sectionOrder[(idx - 1 + sectionOrder.length) % sectionOrder.length]);
+    }
+  }
+});
+
+window.addEventListener('keyup', (e) => {
+  keys[e.key] = false;
+});
 
 // ---- Panel System ----
 function openPanel(sectionId) {
   const data = resumeData[sectionId];
   if (!data) return;
-
   panelHeader.innerHTML = `<h2>${data.title}</h2><div class="panel-subtitle">${data.subtitle}</div>`;
   panelContent.innerHTML = data.content;
   panelOverlay.classList.remove('hidden');
   isPanelOpen = true;
   activeSection = sectionId;
-  updateNavDots(sectionId);
-
-  // Play click sound
-  playSound('click');
 }
 
 function closePanel() {
   panelOverlay.classList.add('hidden');
   isPanelOpen = false;
   activeSection = null;
-  updateNavDots(null);
 }
 
 panelClose.addEventListener('click', closePanel);
@@ -88,252 +181,123 @@ panelOverlay.addEventListener('click', (e) => {
   if (e.target === panelOverlay) closePanel();
 });
 
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && isPanelOpen) closePanel();
-});
+// ---- Player Movement (world coords) ----
+function updatePlayer() {
+  if (isPanelOpen) {
+    player.moving = false;
+    return;
+  }
 
-// ---- Hit Testing ----
-function getHotspotAt(mx, my) {
-  // Convert mouse coords to canvas coords
-  for (let i = hotspots.length - 1; i >= 0; i--) {
-    const h = hotspots[i];
-    if (mx >= h.x && mx <= h.x + h.w && my >= h.y && my <= h.y + h.h) {
-      return h;
+  let dx = 0;
+  let dy = 0;
+
+  if (keys['ArrowLeft'] || keys['a'] || keys['A']) dx -= 1;
+  if (keys['ArrowRight'] || keys['d'] || keys['D']) dx += 1;
+  if (keys['ArrowUp'] || keys['w'] || keys['W']) dy -= 1;
+  if (keys['ArrowDown'] || keys['s'] || keys['S']) dy += 1;
+
+  if (dx !== 0 && dy !== 0) {
+    dx *= 0.707;
+    dy *= 0.707;
+  }
+
+  player.moving = dx !== 0 || dy !== 0;
+
+  if (player.moving) {
+    player.x += dx * player.speed;
+    player.y += dy * player.speed;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      player.facing = dx > 0 ? 'right' : 'left';
+    } else if (dy !== 0) {
+      player.facing = dy > 0 ? 'down' : 'up';
     }
+
+    // Clamp to walkable zones
+    const clamped = clampToZones(player.x, player.y);
+    player.x = clamped.x;
+    player.y = clamped.y;
   }
-  return null;
 }
 
-// ---- Mouse / Touch Events ----
-canvas.addEventListener('mousemove', (e) => {
-  if (isPanelOpen) return;
+// ---- Interaction Prompt ----
+function updateInteractPrompt() {
+  if (isPanelOpen) {
+    interactPrompt.classList.add('hidden');
+    return;
+  }
 
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
+  const nearby = getNearbyInteraction(player);
 
-  const hit = getHotspotAt(mx, my);
-
-  if (hit) {
-    currentHover = hit.id;
-    canvas.style.cursor = 'pointer';
-    tooltip.textContent = hit.label;
-    tooltip.classList.remove('hidden');
-    tooltip.style.left = (e.clientX + 15) + 'px';
-    tooltip.style.top = (e.clientY - 10) + 'px';
-    hintText.classList.add('hidden');
+  if (nearby) {
+    interactPrompt.classList.remove('hidden');
+    interactPrompt.textContent = `Press E — ${nearby.label}`;
+    // Position prompt above player in screen coords
+    const vp = getViewport(canvas.width, canvas.height);
+    const { x: sx, y: sy } = worldToScreen(player.x, player.y, vp);
+    interactPrompt.style.left = sx + 'px';
+    interactPrompt.style.top = (sy - 80 * vp.scale) + 'px';
   } else {
-    currentHover = null;
-    canvas.style.cursor = 'default';
-    tooltip.classList.add('hidden');
-    hintText.classList.remove('hidden');
+    interactPrompt.classList.add('hidden');
   }
-});
-
-canvas.addEventListener('mouseleave', () => {
-  currentHover = null;
-  tooltip.classList.add('hidden');
-  canvas.style.cursor = 'default';
-});
-
-canvas.addEventListener('click', (e) => {
-  if (isPanelOpen) return;
-
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
-
-  const hit = getHotspotAt(mx, my);
-  if (hit) {
-    openPanel(hit.id);
-  }
-});
-
-// Touch support
-canvas.addEventListener('touchend', (e) => {
-  if (isPanelOpen) return;
-  e.preventDefault();
-
-  const touch = e.changedTouches[0];
-  const rect = canvas.getBoundingClientRect();
-  const mx = touch.clientX - rect.left;
-  const my = touch.clientY - rect.top;
-
-  const hit = getHotspotAt(mx, my);
-  if (hit) {
-    openPanel(hit.id);
-  }
-});
-
-// ---- Simple Audio (Web Audio API) ----
-function initAudio() {
-  if (audioCtx) return;
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-}
-
-function playSound(type) {
-  if (!soundEnabled || !audioCtx) return;
-
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-
-  if (type === 'click') {
-    osc.frequency.value = 800;
-    osc.type = 'square';
-    gain.gain.value = 0.08;
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-    osc.start(audioCtx.currentTime);
-    osc.stop(audioCtx.currentTime + 0.1);
-  }
-}
-
-// Ambient drone for atmosphere
-let ambientNodes = null;
-
-function startAmbient() {
-  if (!audioCtx || ambientNodes) return;
-
-  // Low drone
-  const drone = audioCtx.createOscillator();
-  drone.type = 'sine';
-  drone.frequency.value = 80;
-  const droneGain = audioCtx.createGain();
-  droneGain.gain.value = 0.03;
-  drone.connect(droneGain);
-  droneGain.connect(audioCtx.destination);
-  drone.start();
-
-  // High atmospheric tone
-  const atmo = audioCtx.createOscillator();
-  atmo.type = 'sine';
-  atmo.frequency.value = 320;
-  const atmoGain = audioCtx.createGain();
-  atmoGain.gain.value = 0.008;
-  atmo.connect(atmoGain);
-  atmoGain.connect(audioCtx.destination);
-  atmo.start();
-
-  // Noise (rain-like)
-  const bufferSize = audioCtx.sampleRate * 2;
-  const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const data = noiseBuffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * 0.015;
-  }
-  const noise = audioCtx.createBufferSource();
-  noise.buffer = noiseBuffer;
-  noise.loop = true;
-  const noiseFilter = audioCtx.createBiquadFilter();
-  noiseFilter.type = 'lowpass';
-  noiseFilter.frequency.value = 800;
-  const noiseGain = audioCtx.createGain();
-  noiseGain.gain.value = 0.15;
-  noise.connect(noiseFilter);
-  noiseFilter.connect(noiseGain);
-  noiseGain.connect(audioCtx.destination);
-  noise.start();
-
-  ambientNodes = { drone, droneGain, atmo, atmoGain, noise, noiseGain };
-}
-
-function stopAmbient() {
-  if (!ambientNodes) return;
-  try {
-    ambientNodes.drone.stop();
-    ambientNodes.atmo.stop();
-    ambientNodes.noise.stop();
-  } catch (e) { /* already stopped */ }
-  ambientNodes = null;
-}
-
-soundToggle.addEventListener('click', () => {
-  initAudio();
-  soundEnabled = !soundEnabled;
-  soundToggle.classList.toggle('muted', !soundEnabled);
-
-  if (soundEnabled) {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    startAmbient();
-  } else {
-    stopAmbient();
-  }
-});
-
-// ---- Highlight overlay for hovered hotspot ----
-function drawHoverHighlight(ctx, time) {
-  if (!currentHover || isPanelOpen) return;
-
-  const hs = hotspots.find(h => h.id === currentHover);
-  if (!hs) return;
-
-  const pulse = 0.08 + Math.sin(time * 0.004) * 0.04;
-  ctx.fillStyle = `rgba(255, 215, 0, ${pulse})`;
-  ctx.fillRect(hs.x, hs.y, hs.w, hs.h);
-
-  // Border
-  ctx.strokeStyle = `rgba(255, 215, 0, ${pulse * 3})`;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(hs.x, hs.y, hs.w, hs.h);
 }
 
 // ---- Animation Loop ----
 function animate(time) {
-  renderScene(canvas, time);
-  drawHoverHighlight(ctx, time);
+  updatePlayer();
+  renderScene(ctx, canvas.width, canvas.height, player, time);
+  editorDraw(ctx, canvas.width, canvas.height, WALK_ZONES);
+  updateInteractPrompt();
   animFrame = requestAnimationFrame(animate);
 }
 
-// ---- Loading Screen ----
-let loadProgress = 0;
+// ---- Click/Touch support ----
+canvas.addEventListener('contextmenu', (e) => { if (isEditorActive()) e.preventDefault(); });
+canvas.addEventListener('mousedown', (e) => {
+  if (editorMouseDown(e, canvas, WALK_ZONES)) return;
+});
+canvas.addEventListener('mousemove', (e) => {
+  editorMouseMove(e, canvas, WALK_ZONES);
+});
+canvas.addEventListener('mouseup', (e) => { editorMouseUp(e, canvas, WALK_ZONES); });
+canvas.addEventListener('wheel', (e) => {
+  if (editorWheel(e, canvas)) return;
+}, { passive: false });
 
-function simulateLoading() {
-  const interval = setInterval(() => {
-    loadProgress += 2 + Math.random() * 5;
-    if (loadProgress >= 100) {
-      loadProgress = 100;
-      loaderBar.style.width = '100%';
-      clearInterval(interval);
+canvas.addEventListener('click', (e) => {
+  if (isPanelOpen || isEditorActive()) return;
 
-      setTimeout(() => {
-        loader.classList.add('fade-out');
-        // Start the scene
-        animate(0);
-        setTimeout(() => {
-          loader.style.display = 'none';
-        }, 800);
-      }, 400);
-    } else {
-      loaderBar.style.width = loadProgress + '%';
-    }
-  }, 80);
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+
+  // Convert screen click to world coords
+  const vp = getViewport(canvas.width, canvas.height);
+  const { x: wx, y: wy } = screenToWorld(sx, sy, vp);
+
+  // Move player to clicked position (clamped to zones)
+  const cl = clampToZones(wx, wy);
+  player.x = cl.x;
+  player.y = cl.y;
+  player.facing = wx > player.x ? 'right' : 'left';
+
+  const nearby = getNearbyInteraction(player);
+  if (nearby) openPanel(nearby.id);
+});
+
+// ---- Loading & Init ----
+async function init() {
+  await loadAssets((progress) => {
+    loaderBar.style.width = Math.round(progress * 50) + '%';
+  });
+
+  loaderBar.style.width = '100%';
+
+  setTimeout(() => {
+    loader.classList.add('fade-out');
+    animate(0);
+    setTimeout(() => { loader.style.display = 'none'; }, 800);
+  }, 300);
 }
 
-// Ensure fonts are loaded before starting
-document.fonts.ready.then(() => {
-  simulateLoading();
-});
-
-// ---- Keyboard Navigation ----
-document.addEventListener('keydown', (e) => {
-  if (isPanelOpen) {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-      e.preventDefault();
-      const idx = sectionOrder.indexOf(activeSection);
-      const next = sectionOrder[(idx + 1) % sectionOrder.length];
-      openPanel(next);
-    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      const idx = sectionOrder.indexOf(activeSection);
-      const prev = sectionOrder[(idx - 1 + sectionOrder.length) % sectionOrder.length];
-      openPanel(prev);
-    }
-  } else {
-    // Number keys 1-6 to open sections directly
-    const num = parseInt(e.key);
-    if (num >= 1 && num <= sectionOrder.length) {
-      openPanel(sectionOrder[num - 1]);
-    }
-  }
-});
+document.fonts.ready.then(() => { init(); });
