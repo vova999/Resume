@@ -132,7 +132,7 @@ body {
   width: 100vw;
   height: 100vh;
   image-rendering: pixelated;
-  cursor: pointer;
+  cursor: default;
 }
 
 /* ---- UI Overlay ---- */
@@ -156,20 +156,44 @@ body {
   white-space: nowrap;
 }
 
-.hint-text {
+.controls-hint {
   position: absolute;
-  bottom: 30px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   font-family: 'VT323', monospace;
   font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.6);
-  transition: opacity 0.5s;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.5);
+  padding: 6px 16px;
   white-space: nowrap;
 }
 
-.hint-text.hidden {
+/* ---- Interaction Prompt ---- */
+#interact-prompt {
+  position: fixed;
+  z-index: 50;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.7rem;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #ffd700;
+  padding: 8px 14px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+  animation: promptBounce 1.5s ease-in-out infinite;
+}
+
+#interact-prompt.hidden {
   opacity: 0;
+  visibility: hidden;
+}
+
+@keyframes promptBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-5px); }
 }
 
 .nav-dots {
