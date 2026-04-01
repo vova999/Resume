@@ -1,0 +1,16 @@
+{
+  "name": "vietnamese-street-resume",
+  "version": "1.0.0",
+  "description": "Interactive 2.5D pixel art Vietnamese street resume for Tu Nguyen",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "author": "Tu Nguyen",
+  "license": "ISC",
+  "devDependencies": {
+    "vite": "^8.0.2"
+  }
+}
