@@ -1,8 +1,9 @@
 // ============================================
-// Tu Nguyen - Resume Data
+// Tu Nguyen - Resume Data (legacy panel content — kept for reference)
+// Active resume content lives in DIALOG_SEQUENCES in main.js
 // ============================================
 
-export const resumeData = {
+const resumeData = {
   about: {
     label: 'Giới thiệu',
     title: 'About Me',
@@ -241,5 +242,5 @@ export const resumeData = {
   }
 };
 
-// Section keys in order for navigation
-export const sectionOrder = ['about', 'experience', 'skills', 'education', 'projects', 'contact'];
+// Section keys in order for navigation (matches INTERACT_ZONES ids)
+export const sectionOrder = ['oldlady', 'middleagedman', 'cartgirl', 'banhmiboy', 'board', 'threemen'];

@@ -36,6 +36,15 @@ const MANIFEST = {
   idleNorth1: '/assets/sprites/char/north-idle1-sheet.png',
   idleNorth2: '/assets/sprites/char/north-idle2-sheet.png',
 
+  // Character portraits (visual novel dialog)
+  maincharPortrait: '/assets/sprites/mainchar.png',
+  oldladyPortrait: '/assets/sprites/oldlady.png',
+  middleagedmanPortrait: '/assets/sprites/middleagedman.png',
+  cartgirlPortrait: '/assets/sprites/cartgirl.png',
+  banhmiPortrait: '/assets/sprites/banhmi.png',
+  threemenPortrait: '/assets/sprites/3men.png',
+  boardPortrait: '/assets/sprites/board.png',
+
   // NPC sprites
   npcWoman: '/assets/sprites/woman-east.png',
   npcMan: '/assets/sprites/man-east.png',
@@ -76,8 +85,8 @@ export async function loadAssets(onProgress) {
     bgPromises.push(new Promise((resolve) => {
       const img = new Image();
       img.onload = () => { bgFrames[i] = img; reportProgress(); resolve(); };
-      img.onerror = () => { reportProgress(); resolve(); };
-      img.src = `/assets/bg-frames/sprite_${idx}.png`;
+      img.onerror = () => { bgFrames[i] = null; reportProgress(); resolve(); };
+      img.src = `/assets/bg-frames/sprite_${idx}.webp`;
     }));
   }
 

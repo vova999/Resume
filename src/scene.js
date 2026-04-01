@@ -11,12 +11,12 @@ export const WORLD_H = 360;
 
 // --- Interaction zones (rectangular boxes, world coords) ---
 export const INTERACT_ZONES = [
-  { id: 'experience', label: 'Work Experience',  minX: 109, minY: 144, maxX: 149, maxY: 231 },
-  { id: 'skills',     label: 'Skills & Tech',    minX: 191, minY: 159, maxX: 228, maxY: 238 },
-  { id: 'education',  label: 'Education',        minX: 300, minY: 170, maxX: 363, maxY: 250 },
-  { id: 'projects',   label: 'Projects',         minX: 464, minY: 170, maxX: 544, maxY: 253 },
-  { id: 'contact',    label: 'Contact',          minX: 554, minY: 162, maxX: 623, maxY: 240 },
-  { id: 'about',      label: 'About Me',         minX: 231, minY: 306, maxX: 345, maxY: 333 },
+  { id: 'oldlady',    label: 'About Tu', minX: 109, minY: 144, maxX: 149, maxY: 260 },
+  { id: 'middleagedman', label: 'Experience', minX: 192, minY: 159, maxX: 229, maxY: 260 },
+  { id: 'cartgirl',   label: 'Education', minX: 300, minY: 170, maxX: 363, maxY: 260 },
+  { id: 'banhmiboy',  label: 'Skills & Tech', minX: 464, minY: 170, maxX: 544, maxY: 260 },
+  { id: 'board',      label: 'Contact', minX: 554, minY: 162, maxX: 623, maxY: 260 },
+  { id: 'threemen',   label: 'Hobbies', minX: 231, minY: 306, maxX: 345, maxY: 333 },
 ];
 
 // --- Scene props (static + animated decorations) ---
@@ -294,7 +294,7 @@ const FACING_TO_DIR = { down: 'south', up: 'north', left: 'west', right: 'east' 
 
 // Idle animation state
 const idleState = {
-  stoppedAt: 0,        // timestamp when player stopped moving
+  stoppedAt: null,     // timestamp when player stopped moving (null = still moving)
   playing: false,      // is an idle animation currently playing?
   animStartTime: 0,    // when the current idle animation started
   animIndex: 0,        // which idle variant is playing
@@ -319,7 +319,7 @@ function drawPlayer(ctx, player, vp, time) {
 
   if (player.moving) {
     // --- WALKING ---
-    idleState.stoppedAt = 0;
+    idleState.stoppedAt = null;
     idleState.playing = false;
     idleState.waitingForNext = false;
 
@@ -338,7 +338,7 @@ function drawPlayer(ctx, player, vp, time) {
   const idleAnims = ANIMS.idle[dir];
 
   // Track when player stopped
-  if (idleState.stoppedAt === 0) {
+  if (idleState.stoppedAt === null) {
     idleState.stoppedAt = time;
     idleState.playing = false;
     idleState.waitingForNext = false;
