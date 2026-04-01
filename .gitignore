@@ -2,3 +2,14 @@ node_modules
 dist
 .DS_Store
 *.local
+
+# Test/debug screenshots
+*.png
+*.gif
+*.jpeg
+!public/**
+!src/**
+
+# Playwright
+.playwright-mcp/
+.vercel

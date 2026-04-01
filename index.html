@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Tu Nguyen - Interactive Resume | Vietnamese Street</title>
   <meta name="description" content="Interactive pixel art resume of Tu Nguyen - Fintech Tech Lead based in Hanoi, Vietnam" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -11,15 +11,44 @@
   <link rel="stylesheet" href="/src/styles.css" />
 </head>
 <body>
-  <!-- Loading Screen -->
+  <!-- Loading & Title Screen -->
   <div id="loader">
-    <div class="loader-content">
-      <div class="loader-title">Hà Nội Street</div>
-      <div class="loader-subtitle">Đang tải...</div>
-      <div class="loader-bar-container">
-        <div class="loader-bar" id="loader-bar"></div>
+    <!-- Background -->
+    <div class="loader-bg">
+      <img src="/assets/title-bg.png" alt="" class="loader-bg-img" />
+      <div class="loader-bg-overlay"></div>
+    </div>
+
+    <!-- Loading phase -->
+    <div class="loader-phase" id="loader-phase-loading">
+      <div class="loader-content">
+        <div class="loader-loading-text">Đang tải</div>
+        <div class="loader-bar-container">
+          <div class="loader-bar" id="loader-bar"></div>
+        </div>
       </div>
-      <div class="loader-hint">Use arrow keys to explore</div>
+    </div>
+
+    <!-- Title / Start phase -->
+    <div class="loader-phase loader-phase-hidden" id="loader-phase-title">
+      <div class="loader-title-content">
+        <div class="loader-lantern loader-lantern-left"></div>
+        <div class="loader-lantern loader-lantern-right"></div>
+
+        <div class="loader-title-top">Xin chào! Welcome to</div>
+        <h1 class="loader-title">Hà Nội Street</h1>
+        <div class="loader-title-divider"></div>
+        <div class="loader-title-sub">An Interactive Resume</div>
+        <div class="loader-title-name">TU NGUYEN</div>
+        <div class="loader-title-role">Fintech Tech Lead · Co-founder · Hanoi, Vietnam</div>
+
+        <button class="loader-start-btn" id="loader-start-btn">
+          <span class="loader-start-btn-text">Bắt đầu</span>
+          <span class="loader-start-btn-sub">— Press to Start —</span>
+        </button>
+
+        <div class="loader-hint" id="loader-hint">Use arrow keys to move · E to interact</div>
+      </div>
     </div>
   </div>
 
@@ -30,7 +59,8 @@
 
   <!-- Controls hint -->
   <div id="ui-overlay">
-    <div class="street-name">PHỐ TU NGUYỄN</div>
+    <div class="street-name">SOMEWHERE IN HÀ NỘI</div>
+    <a href="/cv.html" target="_blank" class="cv-download-link">Download CV</a>
     <div class="controls-hint" id="controls-hint">
       <span>Arrow keys to move</span> · <span>E to interact</span>
     </div>
@@ -47,6 +77,34 @@
 
   <!-- Interaction prompt -->
   <div id="interact-prompt" class="hidden">Press E to talk</div>
+
+  <!-- Visual Novel Dialog Overlay -->
+  <div id="dialog-overlay" class="hidden">
+    <div class="dialog-portrait-left hidden">
+      <img src="" alt="" />
+    </div>
+    <div class="dialog-portrait-right hidden">
+      <img src="" alt="" />
+    </div>
+    <div class="dialog-portrait-center hidden">
+      <img src="" alt="" />
+    </div>
+    <div class="dialog-npc-box hidden">
+      <div class="dialog-npc-name"></div>
+      <div class="dialog-npc-content"></div>
+    </div>
+    <div class="dialog-board hidden">
+      <div class="dialog-board-inner">
+        <img src="" alt="" />
+        <div class="dialog-board-hotspots"></div>
+      </div>
+    </div>
+    <div class="dialog-box">
+      <div class="dialog-name hidden"></div>
+      <div class="dialog-text"></div>
+      <div class="dialog-continue hidden">&#9660;</div>
+    </div>
+  </div>
 
   <script type="module" src="/src/main.js"></script>
 </body>
