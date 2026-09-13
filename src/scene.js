@@ -1,11 +1,11 @@
 // ============================================
 // RPG Resume — Scene Renderer
-// World coordinate system: 640x360 (matches background frames)
+// World coordinate system: 640x360 (matches the playable street artwork)
 // ============================================
 
 import { getImage, getBgFrame } from './assets.js';
 
-// World dimensions (matches background frames)
+// World dimensions
 export const WORLD_W = 640;
 export const WORLD_H = 360;
 
@@ -23,18 +23,17 @@ export const INTERACT_ZONES = [
 export const SCENE_PROPS = [
   {
     id: 'threeMen',
-    type: 'animated',
-    imageKey: 'threeMenSheet',
-    fw: 168, fh: 168, frames: 16, fps: 8, pause: 5,
+    type: 'static',
+    imageKey: 'threeMenScene',
     wx: 292, wy: 346,
-    scale: 0.69,
+    scale: 0.34,
   },
   {
-    id: 'trashbinet',
+    id: 'recyclingStation',
     type: 'static',
-    imageKey: 'trashbinet',
+    imageKey: 'recyclingStation',
     wx: 133, wy: 346,
-    scale: 1.28,
+    scale: 0.5,
   },
 ];
 
@@ -43,10 +42,9 @@ const MOVING_VEHICLES = [
   // xanhsm: drives from right to park spot, pauses 2s, drives off left, waits 8s
   {
     id: 'xanhsm',
-    imageKey: 'xanhsmSheet',
-    fw: 149, fh: 149, frames: 10, fps: 8,
-    scale: 1.28,
-    wy: 406,
+    imageKey: 'electricTaxi',
+    scale: 0.42,
+    wy: 375,
     startX: 750, targetX: 458, exitX: -200,
     approachSpeed: 80, exitSpeed: 80, // world px/s
     pauseMs: 2000, waitMs: 8000,
@@ -56,10 +54,9 @@ const MOVING_VEHICLES = [
   // grabbike left-to-right every 5s
   {
     id: 'grabbike-lr',
-    imageKey: 'grabbikeSheet',
-    fw: 71, fh: 71, frames: 10, fps: 8,
-    scale: 1.10,
-    wy: 355,
+    imageKey: 'deliveryBike',
+    scale: 0.36,
+    wy: 365,
     startX: -80, exitX: 750,
     speed: 100,
     waitMs: 5000,
@@ -69,10 +66,9 @@ const MOVING_VEHICLES = [
   // grabbike right-to-left every 7s
   {
     id: 'grabbike-rl',
-    imageKey: 'grabbikeSheet',
-    fw: 71, fh: 71, frames: 10, fps: 8,
-    scale: 1.10,
-    wy: 353,
+    imageKey: 'deliveryBike',
+    scale: 0.36,
+    wy: 363,
     startX: 750, exitX: -80,
     speed: 100,
     waitMs: 7000,
@@ -129,11 +125,11 @@ export function renderScene(ctx, W, H, player, time) {
 
   const vp = getViewport(W, H);
 
-  // --- Layer 1: Animated background (PNG frame sequence) ---
+  // --- Layer 1: Playable street background ---
   const bgFrame = getBgFrame(time);
   if (bgFrame) {
     ctx.drawImage(bgFrame,
-      0, 0, WORLD_W, WORLD_H,
+      0, 0, bgFrame.naturalWidth, bgFrame.naturalHeight,
       vp.offsetX, vp.offsetY, WORLD_W * vp.scale, WORLD_H * vp.scale
     );
   } else {
@@ -141,17 +137,74 @@ export function renderScene(ctx, W, H, player, time) {
     ctx.fillRect(0, 0, W, H);
   }
 
-  // --- Layer 2: Player character ---
+  // --- Layer 2: Lightweight ambient life over the static painted street ---
+  drawStreetAtmosphere(ctx, vp, time);
+
+  // --- Layer 3: Player character ---
   drawPlayer(ctx, player, vp, time);
 
-  // --- Layer 3: Scene props (3men, trashbinet) ---
+  // --- Layer 4: Scene props ---
   drawProps(ctx, vp, time);
 
-  // --- Layer 4: xanhsm (above player and props) ---
+  // --- Layer 5: taxi (above player and props) ---
   drawMovingVehicles(ctx, vp, time, 0);
 
-  // --- Layer 5: grabbikes (above everything) ---
+  // --- Layer 6: delivery bikes (above everything) ---
   drawMovingVehicles(ctx, vp, time, 1);
+}
+
+const STEAM_SOURCES = [
+  { x: 261, y: 196 },
+  { x: 325, y: 203 },
+  { x: 505, y: 210 },
+];
+
+const REFLECTION_GLINTS = [
+  { x: 47, y: 286, w: 8 },
+  { x: 170, y: 310, w: 5 },
+  { x: 255, y: 289, w: 7 },
+  { x: 382, y: 315, w: 6 },
+  { x: 491, y: 297, w: 9 },
+  { x: 578, y: 318, w: 5 },
+];
+
+function drawStreetAtmosphere(ctx, vp, time) {
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+
+  // Small, square-edged steam puffs keep the food stalls alive without
+  // loading a full video frame sequence.
+  STEAM_SOURCES.forEach((source, sourceIndex) => {
+    for (let puff = 0; puff < 3; puff++) {
+      const phase = (time / 55 + puff * 11 + sourceIndex * 7) % 30;
+      const x = source.x + Math.round(Math.sin((time / 420) + puff) * 1.5);
+      const y = source.y - phase;
+      const size = Math.max(1, Math.round((2.8 - phase / 16) * vp.scale));
+      ctx.globalAlpha = Math.max(0, 0.24 - phase / 145);
+      ctx.fillStyle = '#f7ead0';
+      ctx.fillRect(
+        Math.round(x * vp.scale + vp.offsetX),
+        Math.round(y * vp.scale + vp.offsetY),
+        size,
+        size
+      );
+    }
+  });
+
+  // Warm reflections pulse gently across the wet pavement.
+  REFLECTION_GLINTS.forEach((glint, index) => {
+    const pulse = (Math.sin(time / 520 + index * 1.7) + 1) / 2;
+    ctx.globalAlpha = 0.08 + pulse * 0.12;
+    ctx.fillStyle = index % 2 ? '#74b9b1' : '#f3bf67';
+    ctx.fillRect(
+      Math.round(glint.x * vp.scale + vp.offsetX),
+      Math.round(glint.y * vp.scale + vp.offsetY),
+      Math.max(2, Math.round(glint.w * vp.scale)),
+      Math.max(1, Math.round(vp.scale))
+    );
+  });
+
+  ctx.restore();
 }
 
 // ============================================
@@ -240,20 +293,38 @@ function drawMovingVehicles(ctx, vp, time, layerFilter) {
     // Determine flip
     const shouldFlip = v.flip || (v.flipApproach && !freeze) || (v.flipExit && freeze);
 
-    // Animate frames (or freeze)
-    const frameIdx = freeze ? 0 : Math.floor((time / (1000 / v.fps))) % v.frames;
-    const srcX = frameIdx * v.fw;
     const { x: sx, y: sy } = worldToScreen(wx, v.wy, vp);
-    const dw = v.fw * v.scale * vp.scale;
-    const dh = v.fh * v.scale * vp.scale;
+    const frameWidth = v.fw || img.naturalWidth;
+    const frameHeight = v.fh || img.naturalHeight;
+    const dw = frameWidth * v.scale * vp.scale;
+    const dh = frameHeight * v.scale * vp.scale;
+    const travelLift = freeze ? 0 : Math.round(Math.sin(time / 95) * 0.4 * vp.scale);
+
+    ctx.fillStyle = 'rgba(10, 29, 33, 0.28)';
+    ctx.fillRect(
+      Math.round(sx - dw * 0.36),
+      Math.round(sy - 3 * vp.scale),
+      Math.round(dw * 0.72),
+      Math.max(1, Math.round(2 * vp.scale))
+    );
 
     ctx.save();
     if (shouldFlip) {
       ctx.translate(sx, 0);
       ctx.scale(-1, 1);
-      ctx.drawImage(img, srcX, 0, v.fw, v.fh, -dw / 2, sy - dh, dw, dh);
+      if (v.fw) {
+        const frameIdx = freeze ? 0 : Math.floor((time / (1000 / v.fps))) % v.frames;
+        ctx.drawImage(img, frameIdx * v.fw, 0, v.fw, v.fh, -dw / 2, sy - dh + travelLift, dw, dh);
+      } else {
+        ctx.drawImage(img, -dw / 2, sy - dh + travelLift, dw, dh);
+      }
     } else {
-      ctx.drawImage(img, srcX, 0, v.fw, v.fh, sx - dw / 2, sy - dh, dw, dh);
+      if (v.fw) {
+        const frameIdx = freeze ? 0 : Math.floor((time / (1000 / v.fps))) % v.frames;
+        ctx.drawImage(img, frameIdx * v.fw, 0, v.fw, v.fh, sx - dw / 2, sy - dh + travelLift, dw, dh);
+      } else {
+        ctx.drawImage(img, sx - dw / 2, sy - dh + travelLift, dw, dh);
+      }
     }
     ctx.restore();
   });
@@ -308,7 +379,7 @@ const idleState = {
 // ============================================
 function drawPlayer(ctx, player, vp, time) {
   const { x: sx, y: sy } = worldToScreen(player.x, player.y, vp);
-  const spriteScale = 0.9 * vp.scale;
+  const spriteScale = 0.6 * vp.scale;
   const dir = FACING_TO_DIR[player.facing] || 'south';
 
   // Shadow (positioned at character's feet)

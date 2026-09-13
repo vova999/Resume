@@ -6,7 +6,7 @@ I made this project for fun: a little pixel-art street where you can walk around
 
 Take a walk, stop for a conversation, and have a look around. If you’re here for my work experience, **Read the résumé** takes you straight to it.
 
-![Pixel-art Hanoi street scene](public/assets/title-bg-v2.webp)
+![Pixel-art Hanoi street scene](public/assets/title-bg.webp)
 
 ## How to explore
 
@@ -57,13 +57,13 @@ index.html          Application shell, title screen, and overlays
 src/
   main.js           Input, movement, dialogue content, and résumé reader
   scene.js          Canvas rendering, viewport, props, and interaction zones
-  assets.js         Sprite and background-frame loading
+  assets.js         Sprite and playable-background loading
   dialog.js         Conversation layouts, text animation, and focus handling
   editor.js         Development-only visual editing tools
   styles.css        Base scene and dialogue styles
   polish.css        Visual refinements, navigation, reader, and print styles
   resumeData.js     Legacy résumé content retained for reference
-public/assets/      Artwork, sprites, animation frames, and asset licenses
+public/assets/      Artwork, sprites, and asset licenses
 vite.config.js      Development server and production build configuration
 ```
 
@@ -77,7 +77,7 @@ The application uses vanilla JavaScript, HTML, CSS, and the Canvas 2D API. Vite 
 
 **Scene layout:** Adjust `INTERACT_ZONES` and `SCENE_PROPS` in `src/scene.js`, and `WALK_ZONES` in `src/main.js`. The scene uses a 640 × 360 world coordinate system that scales to the viewport.
 
-**Visual design:** The palette and interface refinements live in `src/polish.css`, which loads after the base stylesheet. Sprite paths and background-frame settings live in `src/assets.js`.
+**Visual design:** The palette and interface refinements live in `src/polish.css`, which loads after the base stylesheet. Playable-street and sprite paths live in `src/assets.js`; ambient steam and wet-pavement animation live in `src/scene.js`.
 
 **Visual editor:** In development, enter the street and press the backtick key to toggle the editor. Press **C** to copy the current scene values, then apply them to the corresponding source definitions. Editor changes are not automatically saved to source files. The editor is excluded from production builds.
 
