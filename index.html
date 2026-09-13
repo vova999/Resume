@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Tu Nguyen - Interactive Resume | Vietnamese Street</title>
   <meta name="description" content="Interactive pixel art resume of Tu Nguyen - Fintech Tech Lead based in Hanoi, Vietnam" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/src/styles.css" />
+  <link rel="stylesheet" href="/src/polish.css" />
 </head>
 <body>
   <!-- Loading & Title Screen -->
@@ -22,7 +23,7 @@
     <!-- Loading phase -->
     <div class="loader-phase" id="loader-phase-loading">
       <div class="loader-content">
-        <div class="loader-loading-text">Đang tải</div>
+        <div class="loader-loading-text" role="status">Opening the street</div>
         <div class="loader-bar-container">
           <div class="loader-bar" id="loader-bar"></div>
         </div>
@@ -43,11 +44,12 @@
         <div class="loader-title-role">Fintech Tech Lead · Co-founder · Hanoi, Vietnam</div>
 
         <button class="loader-start-btn" id="loader-start-btn">
-          <span class="loader-start-btn-text">Bắt đầu</span>
-          <span class="loader-start-btn-sub">— Press to Start —</span>
+          <span class="loader-start-btn-text">Explore the street</span>
+          <span class="loader-start-btn-sub">Bắt đầu · Enter</span>
         </button>
 
-        <div class="loader-hint" id="loader-hint">Use arrow keys to move · E to interact</div>
+        <button class="read-resume title-resume" type="button">Read the résumé</button>
+        <div class="loader-hint" id="loader-hint">Meet the neighbors. Get to know Tu.</div>
       </div>
     </div>
   </div>
@@ -59,12 +61,17 @@
 
   <!-- Controls hint -->
   <div id="ui-overlay">
-    <div class="street-name">SOMEWHERE IN HÀ NỘI</div>
-    <a href="/cv.html" target="_blank" class="cv-download-link">Download CV</a>
+    <div class="street-name">Hà Nội Street <small>Tu Nguyen’s interactive résumé</small></div>
+    <button class="read-resume cv-download-link" type="button">Read résumé</button>
     <div class="controls-hint" id="controls-hint">
       <span>Arrow keys to move</span> · <span>E to interact</span>
     </div>
   </div>
+  <nav id="street-nav" aria-label="Résumé sections"></nav>
+  <dialog id="resume-reader" aria-label="Tu Nguyen résumé">
+    <div class="reader-toolbar"><span>Tu Nguyen / Résumé</span><button id="print-resume">Print / save PDF</button><button id="close-reader" aria-label="Close résumé">Close ✕</button></div>
+    <article id="reader-content"></article>
+  </dialog>
 
   <!-- Resume Panel Overlay -->
   <div id="panel-overlay" class="hidden">
@@ -79,7 +86,8 @@
   <div id="interact-prompt" class="hidden">Press E to talk</div>
 
   <!-- Visual Novel Dialog Overlay -->
-  <div id="dialog-overlay" class="hidden">
+  <div id="dialog-overlay" class="hidden" role="dialog" aria-modal="true" aria-label="Street conversation" tabindex="-1">
+    <button id="close-conversation" type="button">Back to street <span>Esc</span></button>
     <div class="dialog-portrait-left hidden">
       <img src="" alt="" />
     </div>

@@ -13,6 +13,7 @@ let fullHtml = '';
 let onSequenceEnd = null;
 let justDragged = false;
 let currentPortraitStyles = null;
+let previousFocus = null;
 
 export function wasJustDragged() {
   return justDragged;
@@ -20,6 +21,16 @@ export function wasJustDragged() {
 
 export function initDialog() {
   dialogOverlay = document.getElementById('dialog-overlay');
+  dialogOverlay.addEventListener('keydown', event => {
+    if (event.key !== 'Tab') return;
+    const focusable = [...dialogOverlay.querySelectorAll('button, a[href], summary')].filter(el => el.getClientRects().length);
+    const first = focusable[0], last = focusable.at(-1);
+    if (event.shiftKey && (document.activeElement === first || document.activeElement === dialogOverlay)) {
+      event.preventDefault(); last?.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault(); first?.focus();
+    }
+  });
   if (import.meta.env.DEV) {
     initPortraitDrag();
   }
@@ -54,12 +65,16 @@ export function isDialogActive() {
  *   bigPortrait: 'left' or 'right' — which portrait is 1.5x bigger with 3/4 crop.
  */
 export function startDialog(sequence, onEnd) {
+  previousFocus = document.activeElement;
   currentSequence = sequence;
   currentStep = 0;
   onSequenceEnd = onEnd || null;
   dialogActive = true;
   dialogOverlay.classList.remove('hidden');
   showStep();
+  document.getElementById('ui-overlay').inert = true;
+  document.getElementById('street-nav').inert = true;
+  dialogOverlay.focus();
 }
 
 export function advanceDialog() {
@@ -88,6 +103,9 @@ export function closeDialog() {
   clearInterval(typewriterTimer);
   dialogOverlay.classList.add('hidden');
   resetAll();
+  document.getElementById('ui-overlay').inert = false;
+  document.getElementById('street-nav').inert = false;
+  previousFocus?.focus();
   if (onSequenceEnd) {
     const cb = onSequenceEnd;
     onSequenceEnd = null;
@@ -106,6 +124,12 @@ function startTypewriter(textEl, text, onDone) {
   typewriterDone = false;
   let charIdx = 0;
   clearInterval(typewriterTimer);
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    textEl.innerHTML = fullHtml;
+    typewriterDone = true;
+    onDone?.();
+    return;
+  }
   typewriterTimer = setInterval(() => {
     charIdx++;
     textEl.innerHTML = parseBold(fullText.slice(0, charIdx));
