@@ -1,36 +1,14 @@
 # Hà Nội Street
 
-### Tu Nguyen’s interactive résumé
+Xin chào! I’m Tu Nguyen, a technologist based in Hanoi working across fintech, blockchain, and climate tech.
 
-A personal portfolio set on a pixel-art street in Hanoi. Explore the neighborhood, meet its residents, and discover Tu’s experience in fintech, blockchain, and climate technology through short conversations.
+I made this project for fun: a little pixel-art street where you can walk around, talk to the neighbors, and learn a bit about me. I enjoy games and building side projects, so turning my résumé into a neighborhood to explore felt like a fun way to introduce myself.
 
-For visitors who prefer a conventional format, a dedicated reading view presents the résumé in one place, with an option to print or save it as a PDF.
+Take a walk, stop for a conversation, and have a look around. If you’re here for my work experience, **Read the résumé** takes you straight to it.
 
 ![Pixel-art Hanoi street scene](public/assets/title-bg.webp)
 
-## Features
-
-- **An explorable neighborhood** with animated scenery, moving vehicles, directional character sprites, and defined walking areas.
-- **Six résumé sections:** About Tu, Experience, Education, Skills & Tech, Contact, and Hobbies.
-- **Direct navigation** for opening any section without walking through the scene, with visited-section indicators.
-- **A readable résumé** with expandable sections, contact links, and a print stylesheet.
-- **Keyboard and touch controls**, responsive navigation, visible keyboard focus, and reduced-motion support.
-- **A development editor** for adjusting scene props, walking boundaries, interaction zones, and portrait placement.
-
-## Getting started
-
-Use Node.js 22.12 or later and npm. Node.js 24 is used for local development.
-
-```sh
-git clone https://github.com/vova999/Resume.git
-cd Resume
-npm ci
-npm run dev
-```
-
-Open the local address printed by Vite, normally `http://localhost:3000`.
-
-## Controls
+## How to explore
 
 Choose **Explore the street** to enter the neighborhood, or **Read the résumé** to open the reading view directly.
 
@@ -45,6 +23,32 @@ Choose **Explore the street** to enter the neighborhood, or **Read the résumé*
 On touch devices, drag on the left side to move. Tap on the right to interact with a nearby resident or move to a location. The section buttons provide direct access on smaller screens.
 
 Inside a conversation, select a chapter heading to expand its details. In the reading view, choose **Print / save PDF** to open the browser’s print dialog.
+
+## Who to talk to
+
+Everyone has a different part of the story:
+
+- **The old lady — About Tu:** an introduction to me and what I do.
+- **The man in blue — Experience:** the projects and teams I’ve worked on.
+- **The cart girl — Education:** where I studied, plus certifications and languages.
+- **The bánh mì boy — Skills & Tech:** the technologies and fields I work with.
+- **The noticeboard — Contact:** where to find me online or send me an email.
+- **The guys hanging out — Hobbies:** what I enjoy outside work.
+
+A check mark appears beside each section you’ve visited during your time on the street.
+
+## Run it locally
+
+If you want to look under the hood, you’ll need Node.js 22.12 or later and npm. I use Node.js 24 for local development.
+
+```sh
+git clone https://github.com/vova999/Resume.git
+cd Resume
+npm ci
+npm run dev
+```
+
+Open the local address printed by Vite, normally `http://localhost:3000`.
 
 ## Project structure
 
@@ -102,9 +106,12 @@ Before publishing changes:
 
 There is currently no automated test suite configured.
 
-## Author and assets
+## Say hello
 
-**Tu Nguyen** · Hanoi, Vietnam  
-[GitHub](https://github.com/vova999) · [LinkedIn](https://www.linkedin.com/in/tu-nguyen-757026109/)
+You can find me on [GitHub](https://github.com/vova999) and [LinkedIn](https://www.linkedin.com/in/tu-nguyen-757026109/), or [send me an email](mailto:nguyenngoctu1112@gmail.com).
+
+Thanks for stopping by my little corner of Hanoi.
+
+## Asset credits and licensing
 
 The package declares the ISC license. Artwork and bundled asset packs may carry separate terms; review the license files distributed with those assets before reusing them.
