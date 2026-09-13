@@ -2,12 +2,6 @@
    Vietnamese Street Resume - Styles
    ============================================ */
 
-@font-face {
-  font-family: 'DFVN Stampa';
-  src: url('/fonts/dfvn-stampa.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-}
 
 * {
   margin: 0;

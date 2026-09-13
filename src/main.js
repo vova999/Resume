@@ -5,7 +5,8 @@
 
 import { loadAssets } from './assets.js';
 import { renderScene, getNearbyInteraction, getViewport, worldToScreen, screenToWorld, WORLD_W, WORLD_H } from './scene.js';
-import { sectionOrder } from './resumeData.js';
+import { INTERACT_ZONES } from './scene.js';
+const sectionOrder = INTERACT_ZONES.map(zone => zone.id);
 // Editor only loaded in dev mode
 let toggleEditor, isEditorActive, editorDraw, editorMouseDown, editorMouseMove, editorMouseUp, editorWheel, editorCopyValues, editorKeyDown;
 if (import.meta.env.DEV) {
@@ -26,7 +27,7 @@ if (import.meta.env.DEV) {
   editorMouseDown = noopFalse; editorMouseMove = noop; editorMouseUp = noop;
   editorWheel = noopFalse; editorCopyValues = noop; editorKeyDown = noop;
 }
-import { initDialog, isDialogActive, startDialog, advanceDialog, wasJustDragged } from './dialog.js';
+import { initDialog, isDialogActive, startDialog, closeDialog, advanceDialog, wasJustDragged } from './dialog.js';
 
 // ---- DOM Elements ----
 const canvas = document.getElementById('scene');
@@ -131,6 +132,10 @@ const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
 // ---- Input State ----
 const keys = {};
+let gameStarted = false;
+const reader = document.getElementById('resume-reader');
+document.getElementById('ui-overlay').inert = true;
+document.getElementById('street-nav').inert = true;
 
 // ---- Canvas Sizing ----
 function resizeCanvas() {
@@ -143,6 +148,10 @@ resizeCanvas();
 
 // ---- Keyboard Input ----
 window.addEventListener('keydown', (e) => {
+  if (reader.open || !gameStarted) return;
+  if (e.key === 'Escape' && isDialogActive()) { closeDialog(); return; }
+  if (e.target.closest('button, a, summary, input, textarea, select')) return;
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) e.preventDefault();
   keys[e.key] = true;
 
   // Dialog system takes priority
@@ -359,18 +368,52 @@ const DIALOG_SEQUENCES = {
 
 function triggerInteraction(zoneId) {
   if (DIALOG_SEQUENCES[zoneId]) {
+    resetInput();
+    document.querySelector(`[data-zone="${zoneId}"]`)?.classList.add('visited');
     startDialog(DIALOG_SEQUENCES[zoneId]);
-  } else {
-    openPanel(zoneId);
   }
 }
+
+const nav = document.getElementById('street-nav');
+for (const [index, zone] of INTERACT_ZONES.entries()) {
+  const button = document.createElement('button');
+  button.dataset.zone = zone.id;
+  button.innerHTML = `<kbd>${index + 1}</kbd><span>${zone.label}</span>`;
+  button.addEventListener('click', () => triggerInteraction(zone.id));
+  nav.append(button);
+}
+document.getElementById('close-conversation').addEventListener('click', e => {
+  e.stopPropagation();
+  closeDialog();
+});
+
+// The reading view uses the same content as the conversations, avoiding a second stale CV.
+document.getElementById('reader-content').innerHTML = `
+  <header><p>Hanoi, Vietnam</p><h1>Tu Nguyen</h1><p>Founder & CTO · Fintech, blockchain & climate tech</p></header>
+  ${INTERACT_ZONES.filter(zone => zone.id !== 'board').map(zone => {
+    const step = DIALOG_SEQUENCES[zone.id][0];
+    const content = zone.id === 'oldlady'
+      ? '<p>Nguyen Ngoc Tu is the Founder and CTO of DCarbon, with over 10 years of experience across fintech, enterprise systems, and climate tech. His work connects blockchain and IoT to make carbon data transparent and trustworthy.</p>'
+      : zone.id === 'threemen'
+        ? '<p>Gaming, playing and watching football, building side projects, and DIY.</p>'
+        : step.npcContent.slice(step.npcContent.indexOf('<details>'));
+    return `<section><h2>${zone.label}</h2>${content}</section>`;
+  }).join('')}
+  <section><h2>Contact</h2>${DIALOG_SEQUENCES.board[0].hotspots.map(link => `<p><a href="${link.url}">${link.label === 'Email' ? link.url.slice(7) : link.label}</a></p>`).join('')}</section>`;
+reader.querySelectorAll('details').forEach(detail => { detail.open = true; });
+document.querySelectorAll('.read-resume').forEach(button => button.addEventListener('click', () => {
+  resetInput();
+  reader.showModal();
+}));
+document.getElementById('close-reader').addEventListener('click', () => reader.close());
+document.getElementById('print-resume').addEventListener('click', () => window.print());
 
 // ---- Mobile touch joystick state ----
 const touchMove = { active: false, dx: 0, dy: 0 };
 
 // ---- Player Movement (world coords) ----
-function updatePlayer() {
-  if (isDialogActive()) {
+function updatePlayer(delta) {
+  if (isDialogActive() || reader.open) {
     player.moving = false;
     return;
   }
@@ -397,8 +440,8 @@ function updatePlayer() {
   player.moving = dx !== 0 || dy !== 0;
 
   if (player.moving) {
-    player.x += dx * player.speed;
-    player.y += dy * player.speed;
+    player.x += dx * player.speed * delta;
+    player.y += dy * player.speed * delta;
 
     if (Math.abs(dx) > Math.abs(dy)) {
       player.facing = dx > 0 ? 'right' : 'left';
@@ -431,9 +474,13 @@ function updateInteractPrompt() {
 }
 
 // ---- Animation Loop ----
+let lastTime = null;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 function animate(time) {
-  updatePlayer();
-  renderScene(ctx, canvas.width, canvas.height, player, time);
+  const delta = lastTime === null ? 1 : Math.min((time - lastTime) / (1000 / 60), 3);
+  lastTime = time;
+  updatePlayer(delta);
+  renderScene(ctx, canvas.width, canvas.height, player, reducedMotion.matches ? 0 : time);
   editorDraw(ctx, canvas.width, canvas.height, WALK_ZONES);
   updateInteractPrompt();
   requestAnimationFrame(animate);
@@ -459,10 +506,11 @@ function handleMoveToPoint(sx, sy) {
   const vp = getViewport(canvas.width, canvas.height);
   const { x: wx, y: wy } = screenToWorld(sx, sy, vp);
 
+  const previousX = player.x;
   const cl = clampToZones(wx, wy);
   player.x = cl.x;
   player.y = cl.y;
-  player.facing = wx > player.x ? 'right' : 'left';
+  player.facing = cl.x > previousX ? 'right' : 'left';
 
   const nearby = getNearbyInteraction(player);
   if (nearby) triggerInteraction(nearby.id);
@@ -482,6 +530,17 @@ let joystickOrigin = null;
 let joystickMoved = false;
 const JOYSTICK_DEAD_ZONE = 10; // px
 const JOYSTICK_MAX = 60; // px — full tilt distance
+
+function resetInput() {
+  Object.keys(keys).forEach(key => { keys[key] = false; });
+  joystickTouchId = null;
+  joystickOrigin = null;
+  joystickMoved = false;
+  Object.assign(touchMove, { active: false, dx: 0, dy: 0 });
+}
+window.addEventListener('blur', resetInput);
+document.addEventListener('visibilitychange', () => { resetInput(); lastTime = null; });
+canvas.addEventListener('touchcancel', resetInput);
 
 canvas.addEventListener('touchstart', (e) => {
   if (isEditorActive() || isDialogActive()) return;
@@ -572,7 +631,7 @@ async function init() {
   }
 
   await loadAssets((progress) => {
-    loaderBar.style.width = Math.round(progress * 50) + '%';
+    loaderBar.style.width = Math.round(progress * 100) + '%';
   });
 
   loaderBar.style.width = '100%';
@@ -587,10 +646,11 @@ async function init() {
   }, 500);
 
   // Start button → enter game
-  let gameStarted = false;
   function enterGame() {
     if (gameStarted) return;
     gameStarted = true;
+    document.getElementById('ui-overlay').inert = false;
+    document.getElementById('street-nav').inert = false;
     startBtn.removeEventListener('click', enterGame);
     window.removeEventListener('keydown', handleStartKey);
     loader.classList.add('fade-out');
@@ -599,6 +659,7 @@ async function init() {
 
     // Intro dialog — 1 second after scene appears
     setTimeout(() => {
+      if (reader.open || isDialogActive()) return;
       startDialog([
         {
           speaker: 'You',
@@ -620,6 +681,7 @@ async function init() {
 
   // Also allow Enter/Space to start
   function handleStartKey(e) {
+    if (reader.open || e.target.closest('button, a')) return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       window.removeEventListener('keydown', handleStartKey);
@@ -644,4 +706,4 @@ dialogOverlayEl.addEventListener('click', (e) => {
   advanceDialog();
 });
 
-document.fonts.ready.then(() => { init(); });
+init();
