@@ -4,8 +4,8 @@ body { background: var(--night); }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { font: inherit; }
 :focus-visible { outline: 3px solid var(--jade); outline-offset: 5px; }
-.loader-bg-img { filter: brightness(.58) saturate(.9); animation: none; transform: none; }
-.loader-bg-overlay { background: linear-gradient(90deg, rgba(18,38,51,.94), rgba(18,38,51,.76) 45%, rgba(18,38,51,.08)); }
+.loader-bg-img { filter: brightness(.68) saturate(.9) contrast(1.04); animation: none; transform: none; }
+.loader-bg-overlay { background: linear-gradient(90deg, rgba(18,38,51,.94), rgba(18,38,51,.7) 44%, rgba(18,38,51,.04)); }
 #loader-phase-title { justify-content: flex-start; }
 .loader-title-content { text-align: left; padding: 48px 7vw; max-width: 780px; }
 .loader-title-top { font: 500 18px/1.5 Inter, sans-serif; text-transform: none; letter-spacing: 0; color: var(--paper); }

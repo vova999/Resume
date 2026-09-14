@@ -2,14 +2,18 @@
 // Asset Loader — RPG Resume
 // ============================================
 
-export function getBgFrame() {
-  return images.streetBackground || null;
+// Background frame config
+const BG_TOTAL_FRAMES = 121;
+const BG_FPS = 24;
+const bgFrames = [];
+
+export function getBgFrame(time) {
+  if (bgFrames.length === 0) return null;
+  const frameIdx = Math.floor((time / (1000 / BG_FPS))) % bgFrames.length;
+  return bgFrames[frameIdx];
 }
 
 const MANIFEST = {
-  // Playable street
-  streetBackground: '/assets/street-bg-v2.webp',
-
   // Player static directions
   playerSouth: '/assets/sprites/char/south.png',
   playerEast: '/assets/sprites/char/east.png',
@@ -46,17 +50,17 @@ const MANIFEST = {
   npcMan: '/assets/sprites/man-east.png',
 
   // Scene props
-  threeMenScene: '/assets/sprites/3men-scene-v2.webp',
-  recyclingStation: '/assets/sprites/recycling-station-v2.webp',
-  deliveryBike: '/assets/sprites/delivery-bike-v2.webp',
-  electricTaxi: '/assets/sprites/electric-taxi-v2.webp',
+  threeMenSheet: '/assets/sprites/3men-sheet.png',
+  trashbinet: '/assets/sprites/electric-trashbinet.png',
+  grabbikeSheet: '/assets/sprites/grabbike-sheet.png',
+  xanhsmSheet: '/assets/sprites/xanhsm-sheet.png',
 };
 
 const images = {};
 
 export async function loadAssets(onProgress) {
   const entries = Object.entries(MANIFEST);
-  const totalItems = entries.length;
+  const totalItems = entries.length + BG_TOTAL_FRAMES;
   let loaded = 0;
 
   function reportProgress() {
@@ -74,7 +78,19 @@ export async function loadAssets(onProgress) {
     });
   });
 
-  await Promise.all(spritePromises);
+  // Load background frames
+  const bgPromises = [];
+  for (let i = 0; i < BG_TOTAL_FRAMES; i++) {
+    const idx = String(i).padStart(3, '0');
+    bgPromises.push(new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => { bgFrames[i] = img; reportProgress(); resolve(); };
+      img.onerror = () => { bgFrames[i] = null; reportProgress(); resolve(); };
+      img.src = `/assets/bg-frames/sprite_${idx}.webp`;
+    }));
+  }
+
+  await Promise.all([...spritePromises, ...bgPromises]);
   return images;
 }
 
