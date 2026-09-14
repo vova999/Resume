@@ -6,7 +6,7 @@ I made this project for fun: a little pixel-art street where you can walk around
 
 Take a walk, stop for a conversation, and have a look around. If you’re here for my work experience, **Read the résumé** takes you straight to it.
 
-![Pixel-art Hanoi street scene](public/assets/title-bg-v2.webp)
+![Pixel-art Hanoi street scene](public/assets/title-bg.webp)
 
 ## How to explore
 

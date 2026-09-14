@@ -37,12 +37,12 @@ const MANIFEST = {
   idleNorth2: '/assets/sprites/char/north-idle2-sheet.png',
 
   // Character portraits (visual novel dialog)
-  maincharPortrait: '/assets/sprites/mainchar-v2.webp',
-  oldladyPortrait: '/assets/sprites/oldlady-v2.webp',
-  middleagedmanPortrait: '/assets/sprites/middleagedman-v2.webp',
-  cartgirlPortrait: '/assets/sprites/cartgirl-v2.webp',
-  banhmiPortrait: '/assets/sprites/banhmi-v2.webp',
-  threemenPortrait: '/assets/sprites/3men-v2.webp',
+  maincharPortrait: '/assets/sprites/mainchar.webp',
+  oldladyPortrait: '/assets/sprites/oldlady.webp',
+  middleagedmanPortrait: '/assets/sprites/middleagedman.webp',
+  cartgirlPortrait: '/assets/sprites/cartgirl.webp',
+  banhmiPortrait: '/assets/sprites/banhmi.webp',
+  threemenPortrait: '/assets/sprites/3men.webp',
   boardPortrait: '/assets/sprites/board.webp',
 
   // NPC sprites
